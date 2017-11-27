@@ -1,15 +1,15 @@
 package com.example.jeff.jeff23andme;
 
-import android.app.Activity;
+
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
+import android.text.TextUtils;
+
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
-import android.webkit.WebResourceResponse;
+
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -20,12 +20,12 @@ import com.orhanobut.logger.Logger;
 
 public class LoginActivity extends AppCompatActivity {
 
-//    public static final String CLIENT_ID = "0637825256de4d9e9c969ec594b032c8";
-//    public static final String REDIRECT_URI = "https://www.23andme.com";
+    public static final String CLIENT_ID = "0637825256de4d9e9c969ec594b032c8";
+    public static final String REDIRECT_URI = "https://www.23andme.com";
 
     //jeff
-    public static final String CLIENT_ID = "623e75ff78854015b3b3a6c200b96bb1";
-    public static final String REDIRECT_URI = "https://www.23andme.com";
+//    public static final String CLIENT_ID = "623e75ff78854015b3b3a6c200b96bb1";
+//    public static final String REDIRECT_URI = "https://www.23andme.com";
 
     private WebView mWebview;
 
@@ -35,6 +35,13 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         Logger.addLogAdapter(new AndroidLogAdapter());
+
+        String token = Utils.getToken(this);
+        if (!TextUtils.isEmpty(token)) {
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finish();
+            return;
+        }
 
         CookieSyncManager.createInstance(this);
         CookieManager cookieManager = CookieManager.getInstance();
