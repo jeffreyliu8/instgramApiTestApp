@@ -39,9 +39,7 @@ public final class UsersEndpoint extends BaseEndpoint {
                 @Query("access_token") String accessToken,
                 @Query("count") Integer count,
                 @Query("min_id") String minId,
-                @Query("max_id") String maxId,
-                @Query("min_timestamp") Long minTimestamp,
-                @Query("max_timestamp") Long maxTimestamp);
+                @Query("max_id") String maxId);
 
         @GET("v1/users/self/media/liked")
         Liked getLiked(
@@ -83,12 +81,12 @@ public final class UsersEndpoint extends BaseEndpoint {
     }
 
     public Call<Recent> getRecent() {
-        return userService.getRecent("self", accessToken, null, null, null, null, null);
+        return userService.getRecent("self", accessToken, null, null, null);
     }
 
-//    public Recent getRecent(final String userId, final Integer count, final String minId, final String maxId, final Long minTimestamp, final Long maxTimestamp) {
-//        return userService.getRecent(userId, accessToken, count, minId, maxId, minTimestamp, maxTimestamp);
-//    }
+    public Call<Recent> getRecent( final Integer count, final String minId, final String maxId) {
+        return userService.getRecent("self", accessToken, count, minId, maxId);
+    }
 
     public Liked getLiked() {
         return userService.getLiked(accessToken, null, null);

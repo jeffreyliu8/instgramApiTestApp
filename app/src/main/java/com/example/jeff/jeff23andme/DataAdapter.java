@@ -66,7 +66,7 @@ public class DataAdapter extends RecyclerView.Adapter {
                                 // End has been reached
                                 // Do something
                                 if (onLoadMoreListener != null) {
-                                    onLoadMoreListener.onLoadMore();
+                                    onLoadMoreListener.onLoadMore(imageLikeList.get(imageLikeList.size() - 1).getMediaID());
                                 }
                                 loading = true;
                             }

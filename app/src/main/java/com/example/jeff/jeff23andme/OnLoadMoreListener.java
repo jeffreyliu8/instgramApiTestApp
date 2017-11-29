@@ -5,5 +5,5 @@ package com.example.jeff.jeff23andme;
  */
 
 public interface OnLoadMoreListener  {
-    void onLoadMore();
+    void onLoadMore(String lastMediaId);
 }

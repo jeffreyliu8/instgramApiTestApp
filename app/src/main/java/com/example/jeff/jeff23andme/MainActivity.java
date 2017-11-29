@@ -34,30 +34,23 @@ import com.orhanobut.logger.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 
 public class MainActivity extends AppCompatActivity {
 
+    @BindView(R.id.my_recycler_view)
+    RecyclerView mRecyclerView;
 
-    private TextView tvEmptyView;
-    private RecyclerView mRecyclerView;
     private DataAdapter mAdapter;
-    private LinearLayoutManager mLayoutManager;
-
-    private List<ImageLike> imageLikeList;
-
-
-    protected Handler handler;
+    private List<ImageLike> imageLikeList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        tvEmptyView = findViewById(R.id.empty_view);
-        mRecyclerView = findViewById(R.id.my_recycler_view);
-        imageLikeList = new ArrayList<>();
-        handler = new Handler();
+        ButterKnife.bind(this);
 
         loadData();
 
@@ -65,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         // in content do not change the layout size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);
 
-        mLayoutManager = new LinearLayoutManager(this);
+        LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
 
         // use a linear layout manager
         mRecyclerView.setLayoutManager(mLayoutManager);
@@ -116,54 +109,52 @@ public class MainActivity extends AppCompatActivity {
 
         // set the adapter object to the Recyclerview
         mRecyclerView.setAdapter(mAdapter);
-        //  mAdapter.notifyDataSetChanged();
 
+        mAdapter.setOnLoadMoreListener(new OnLoadMoreListener() {
+            @Override
+            public void onLoadMore(String mediaId) {
+                //add null , so the adapter will check view_type and show progress bar at bottom
+                imageLikeList.add(null);
+                mAdapter.notifyItemInserted(imageLikeList.size() - 1);
 
-//        if (imageLikeList.isEmpty()) {
-//            mRecyclerView.setVisibility(View.GONE);
-//            tvEmptyView.setVisibility(View.VISIBLE);
-//        } else {
-//            mRecyclerView.setVisibility(View.VISIBLE);
-//            tvEmptyView.setVisibility(View.GONE);
-//        }
+                UsersEndpoint usersEndpoint = new UsersEndpoint(Utils.getToken(MainActivity.this));
+                usersEndpoint.getRecent(2, null, mediaId).enqueue(new retrofit2.Callback<Recent>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<Recent> call, retrofit2.Response<Recent> response) {
+                        if (response.isSuccessful()) {
+                            imageLikeList.remove(imageLikeList.size() - 1);
+                            mAdapter.notifyItemRemoved(imageLikeList.size());
 
-//        mAdapter.setOnLoadMoreListener(new OnLoadMoreListener() {
-//            @Override
-//            public void onLoadMore() {
-//                //add null , so the adapter will check view_type and show progress bar at bottom
-//                imageLikeList.add(null);
-//                mAdapter.notifyItemInserted(imageLikeList.size() - 1);
-//
-//                handler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        //   remove progress item
-//                        imageLikeList.remove(imageLikeList.size() - 1);
-//                        mAdapter.notifyItemRemoved(imageLikeList.size());
-//                        //add items one by one
-//                        int start = imageLikeList.size();
-//                        int end = start + 20;
-//
-//                        for (int i = start + 1; i <= end; i++) {
-//                            imageLikeList.add(new ImageLike("https://images.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png", false));
-//                            mAdapter.notifyItemInserted(imageLikeList.size());
-//                        }
-//                        mAdapter.setLoaded();
-//                        //or you can add all at once but do not forget to call mAdapter.notifyDataSetChanged();
-//                    }
-//                }, 2000);
-//
-//            }
-//        });
+                            Recent recent = response.body();
+                            List<Media> mediaList = recent.getMediaList();
+                            for (int i = 0; i < mediaList.size(); i++) {
+                                String id = mediaList.get(i).getId();
+                                Images images = mediaList.get(i).getImages();
+                                Image image = images.getStandardResolution();
+                                imageLikeList.add(new ImageLike(id, image.getUrl(), mediaList.get(i).userHasLiked()));
+                                mAdapter.notifyItemInserted(imageLikeList.size());
+                            }
 
+                            mAdapter.setLoaded();
+                        } else {
+                            Logger.e(response.toString());
+                        }
+                    }
 
+                    @Override
+                    public void onFailure(retrofit2.Call<Recent> call, Throwable t) {
+                        Logger.e("load recent failed");
+                    }
+                });
+            }
+        });
     }
 
 
     // load initial data
     private void loadData() {
         UsersEndpoint usersEndpoint = new UsersEndpoint(Utils.getToken(this));
-        usersEndpoint.getRecent().enqueue(new retrofit2.Callback<Recent>() {
+        usersEndpoint.getRecent(2, null, null).enqueue(new retrofit2.Callback<Recent>() {
             @Override
             public void onResponse(retrofit2.Call<Recent> call, retrofit2.Response<Recent> response) {
                 if (response.isSuccessful()) {
