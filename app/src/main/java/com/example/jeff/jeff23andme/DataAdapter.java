@@ -37,7 +37,7 @@ public class DataAdapter extends RecyclerView.Adapter {
 
     public void updateLiked(int position, boolean isLiked) {
         imageLikeList.get(position).setLiked(isLiked);
-        notifyItemChanged(position);
+        notifyItemChanged(position, isLiked);
     }
 
     public DataAdapter(List<ImageLike> imageLikes, RecyclerView recyclerView, Context context, RecyclerViewClickListener listener) {
@@ -107,6 +107,17 @@ public class DataAdapter extends RecyclerView.Adapter {
             ((ImageLikeViewHolder) holder).imageLike = singleImageLike;
         } else {
             ((ProgressViewHolder) holder).progressBar.setIndeterminate(true);
+        }
+    }
+
+    @Override
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position, List payloads) {
+        if (!payloads.isEmpty()) {
+            if (payloads.get(0) instanceof Boolean) {
+                ((ImageLikeViewHolder) holder).tvIsLike.setText((boolean) payloads.get(0) ? "liked" : "not liked");
+            }
+        } else {
+            onBindViewHolder(holder, position);
         }
     }
 
