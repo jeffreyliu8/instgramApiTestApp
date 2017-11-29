@@ -5,6 +5,7 @@ import com.example.jeff.jeff23andme.model.DeleteLikeResponse;
 import com.example.jeff.jeff23andme.model.LikeResponse;
 import com.example.jeff.jeff23andme.model.Likes;
 
+import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.DELETE;
@@ -17,18 +18,18 @@ public class LikesEndpoint extends BaseEndpoint {
 
     private static interface LikesService {
 
-        @GET("/media/{media_id}/likes")
-        public Likes getLikes(
+        @GET("/v1/media/{media_id}/likes")
+        Likes getLikes(
                 @Path("media_id") String mediaId,
                 @Query("access_token") String accessToken);
 
-        @POST("/media/{media_id}/likes")
-        public LikeResponse postLike(
+        @POST("/v1/media/{media_id}/likes")
+        Call<LikeResponse> postLike(
                 @Path("media_id") String mediaId,
                 @Query("access_token") String accessToken);
 
-        @DELETE("/media/{media_id}/likes")
-        public DeleteLikeResponse deleteLike(
+        @DELETE("/v1/media/{media_id}/likes")
+        Call<DeleteLikeResponse> deleteLike(
                 @Path("media_id") String mediaId,
                 @Query("access_token") String accessToken);
 
@@ -51,12 +52,12 @@ public class LikesEndpoint extends BaseEndpoint {
         return likesService.getLikes(mediaId, accessToken);
     }
 
-    public boolean like(final String mediaId) {
-        return likesService.postLike(mediaId, accessToken).isSuccessfull();
+    public Call<LikeResponse> like(final String mediaId) {
+        return likesService.postLike(mediaId, accessToken);
     }
 
-    public boolean unlike(final String mediaId) {
-        return likesService.deleteLike(mediaId, accessToken).isSuccessfull();
+    public Call<DeleteLikeResponse> unlike(final String mediaId) {
+        return likesService.deleteLike(mediaId, accessToken);
     }
 
 }

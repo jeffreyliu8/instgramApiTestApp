@@ -75,7 +75,7 @@ public class LoginActivity extends AppCompatActivity {
         });
 
 
-        String url = "https://api.instagram.com/oauth/authorize/?client_id=" + CLIENT_ID + "&redirect_uri=" + REDIRECT_URI + "&response_type=token";
+        String url = "https://api.instagram.com/oauth/authorize/?client_id=" + CLIENT_ID + "&redirect_uri=" + REDIRECT_URI + "&response_type=token&scope=basic+public_content+follower_list+comments+relationships+likes";
         // Logger.d("url is  " + url);
 
         mWebview.loadUrl(url);

@@ -6,6 +6,7 @@ import com.example.jeff.jeff23andme.model.MediaResponse;
 import com.example.jeff.jeff23andme.model.Popular;
 import com.example.jeff.jeff23andme.model.SearchMediaResponse;
 
+import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
@@ -17,7 +18,7 @@ public class MediaEndpoint extends BaseEndpoint {
     private static interface MediaService {
 
         @GET("/media/{media_id}")
-        public MediaResponse getMedia(
+        Call<MediaResponse>  getMedia(
                 @Path("media_id") String mediaId,
                 @Query("access_token") String accessToken);
 
@@ -48,8 +49,8 @@ public class MediaEndpoint extends BaseEndpoint {
         mediaService = retrofit.create(MediaService.class);
     }
 
-    public Media getMedia(final String mediaId) {
-        return mediaService.getMedia(mediaId, accessToken).getMedia();
+    public Call<MediaResponse> getMedia(final String mediaId) {
+        return mediaService.getMedia(mediaId, accessToken);
     }
 
     public SearchMediaResponse search(final Integer distance) {

@@ -6,7 +6,7 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,24 +14,27 @@ import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.widget.TextView;
 
+
+import com.example.jeff.jeff23andme.endpoints.LikesEndpoint;
+
 import com.example.jeff.jeff23andme.endpoints.UsersEndpoint;
+import com.example.jeff.jeff23andme.model.DeleteLikeResponse;
 import com.example.jeff.jeff23andme.model.Image;
 import com.example.jeff.jeff23andme.model.Images;
+import com.example.jeff.jeff23andme.model.LikeResponse;
+
 import com.example.jeff.jeff23andme.model.Media;
+
 
 import com.example.jeff.jeff23andme.model.Recent;
 
 import com.orhanobut.logger.Logger;
 
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -41,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private DataAdapter mAdapter;
     private LinearLayoutManager mLayoutManager;
 
-    private List<Student> studentList;
+    private List<ImageLike> imageLikeList;
 
 
     protected Handler handler;
@@ -50,20 +53,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
-
-        toolbar = findViewById(R.id.toolbar);
         tvEmptyView = findViewById(R.id.empty_view);
         mRecyclerView = findViewById(R.id.my_recycler_view);
-        studentList = new ArrayList<>();
+        imageLikeList = new ArrayList<>();
         handler = new Handler();
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-            getSupportActionBar().setTitle("Android Students");
-
-        }
 
         loadData();
 
@@ -77,52 +71,97 @@ public class MainActivity extends AppCompatActivity {
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         // create an Object for Adapter
-        mAdapter = new DataAdapter(studentList, mRecyclerView);
+        mAdapter = new DataAdapter(imageLikeList, mRecyclerView, this, new DataAdapter.RecyclerViewClickListener() {
+            @Override
+            public void onClick(View view, final int position, ImageLike imageLike) {
+                Logger.d("id is " + imageLike.getMediaID());
+                LikesEndpoint likesEndpoint = new LikesEndpoint(Utils.getToken(MainActivity.this));
+                if (imageLike.isLiked()) {
+                    likesEndpoint.unlike(imageLike.getMediaID()).enqueue(new retrofit2.Callback<DeleteLikeResponse>() {
+                        @Override
+                        public void onResponse(retrofit2.Call<DeleteLikeResponse> call, retrofit2.Response<DeleteLikeResponse> response) {
+                            if (response.isSuccessful()) {
+                                Logger.d("unliked");
+                                mAdapter.updateLiked(position, false);
+                            } else {
+                                Logger.e("hum, unliked failed " + response.toString());
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(retrofit2.Call<DeleteLikeResponse> call, Throwable t) {
+                            Logger.e("unliked failed " + call.toString());
+                        }
+                    });
+                } else {
+                    likesEndpoint.like(imageLike.getMediaID()).enqueue(new retrofit2.Callback<LikeResponse>() {
+                        @Override
+                        public void onResponse(retrofit2.Call<LikeResponse> call, retrofit2.Response<LikeResponse> response) {
+                            if (response.isSuccessful()) {
+                                Logger.d("liked");
+                                mAdapter.updateLiked(position, true);
+                            } else {
+                                Logger.e("hum, liked failed " + response.raw().toString());
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(retrofit2.Call<LikeResponse> call, Throwable t) {
+                            Logger.e("liked failed " + call.toString());
+                        }
+                    });
+                }
+            }
+        });
 
         // set the adapter object to the Recyclerview
         mRecyclerView.setAdapter(mAdapter);
         //  mAdapter.notifyDataSetChanged();
 
 
-        if (studentList.isEmpty()) {
-            mRecyclerView.setVisibility(View.GONE);
-            tvEmptyView.setVisibility(View.VISIBLE);
+//        if (imageLikeList.isEmpty()) {
+//            mRecyclerView.setVisibility(View.GONE);
+//            tvEmptyView.setVisibility(View.VISIBLE);
+//        } else {
+//            mRecyclerView.setVisibility(View.VISIBLE);
+//            tvEmptyView.setVisibility(View.GONE);
+//        }
 
-        } else {
-            mRecyclerView.setVisibility(View.VISIBLE);
-            tvEmptyView.setVisibility(View.GONE);
-        }
+//        mAdapter.setOnLoadMoreListener(new OnLoadMoreListener() {
+//            @Override
+//            public void onLoadMore() {
+//                //add null , so the adapter will check view_type and show progress bar at bottom
+//                imageLikeList.add(null);
+//                mAdapter.notifyItemInserted(imageLikeList.size() - 1);
+//
+//                handler.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        //   remove progress item
+//                        imageLikeList.remove(imageLikeList.size() - 1);
+//                        mAdapter.notifyItemRemoved(imageLikeList.size());
+//                        //add items one by one
+//                        int start = imageLikeList.size();
+//                        int end = start + 20;
+//
+//                        for (int i = start + 1; i <= end; i++) {
+//                            imageLikeList.add(new ImageLike("https://images.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png", false));
+//                            mAdapter.notifyItemInserted(imageLikeList.size());
+//                        }
+//                        mAdapter.setLoaded();
+//                        //or you can add all at once but do not forget to call mAdapter.notifyDataSetChanged();
+//                    }
+//                }, 2000);
+//
+//            }
+//        });
 
-        mAdapter.setOnLoadMoreListener(new OnLoadMoreListener() {
-            @Override
-            public void onLoadMore() {
-                //add null , so the adapter will check view_type and show progress bar at bottom
-                studentList.add(null);
-                mAdapter.notifyItemInserted(studentList.size() - 1);
 
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        //   remove progress item
-                        studentList.remove(studentList.size() - 1);
-                        mAdapter.notifyItemRemoved(studentList.size());
-                        //add items one by one
-                        int start = studentList.size();
-                        int end = start + 20;
+    }
 
-                        for (int i = start + 1; i <= end; i++) {
-                            studentList.add(new Student("Student " + i, "AndroidStudent" + i + "@gmail.com"));
-                            mAdapter.notifyItemInserted(studentList.size());
-                        }
-                        mAdapter.setLoaded();
-                        //or you can add all at once but do not forget to call mAdapter.notifyDataSetChanged();
-                    }
-                }, 2000);
 
-            }
-        });
-
-        Logger.d("token is " + Utils.getToken(this));
+    // load initial data
+    private void loadData() {
         UsersEndpoint usersEndpoint = new UsersEndpoint(Utils.getToken(this));
         usersEndpoint.getRecent().enqueue(new retrofit2.Callback<Recent>() {
             @Override
@@ -131,14 +170,12 @@ public class MainActivity extends AppCompatActivity {
                     Recent recent = response.body();
                     List<Media> mediaList = recent.getMediaList();
                     for (int i = 0; i < mediaList.size(); i++) {
+                        String id = mediaList.get(i).getId();
                         Images images = mediaList.get(i).getImages();
-
                         Image image = images.getStandardResolution();
-                        //image.getUrl()
-
-                        Logger.d(image.getUrl());
+                        imageLikeList.add(new ImageLike(id, image.getUrl(), mediaList.get(i).userHasLiked()));
                     }
-
+                    mAdapter.notifyDataSetChanged();
                 } else {
                     Logger.e(response.toString());
                 }
@@ -146,66 +183,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(retrofit2.Call<Recent> call, Throwable t) {
-
+                Logger.e("load recent failed");
             }
         });
-
-
-//        usersEndpoint.getRecent().enqueue(new retrofit2.Callback<Profile>() {
-//            @Override
-//            public void onResponse(retrofit2.Call<Profile> call, retrofit2.Response<Profile> response) {
-//                if (response.isSuccessful()) {
-//                    Profile profile = response.body();
-//                    User user = profile.getUser();
-//                    Logger.d(user.getId());
-//                } else {
-//                    Logger.e(response.toString());
-//                }
-//            }
-//
-//            @Override
-//            public void onFailure(retrofit2.Call<Profile> call, Throwable t) {
-//                Logger.e("failed");
-//            }
-//        });
-    }
-
-
-    // load initial data
-    private void loadData() {
-        for (int i = 1; i <= 20; i++) {
-            studentList.add(new Student("Student " + i, "androidstudent" + i + "@gmail.com"));
-        }
-    }
-
-    private void run(String url) throws IOException {
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-        OkHttpClient client = new OkHttpClient();
-
-        client.newCall(request)
-                .enqueue(new Callback() {
-                    @Override
-                    public void onFailure(final Call call, IOException e) {
-                        // Error
-                        Logger.e(e.toString());
-//                        runOnUiThread(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                // For the example, you can show an error dialog or a toast
-//                                // on the main UI thread
-//                            }
-//                        });
-                    }
-
-                    @Override
-                    public void onResponse(Call call, final Response response) throws IOException {
-                        String res = response.body().string();
-                        Logger.d("res is " + res);
-                        // Do something with the response
-                    }
-                });
     }
 
     @Override
